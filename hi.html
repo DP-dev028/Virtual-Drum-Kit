@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf‑8">
+  <title>Flappy Bird Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+</head>
+<body>
+
+<script>
+/*  ----------  Assets  ---------- */
+// Bird sprite (transparent PNG)
+let birdImg = 'https://i.imgur.com/2VbU7t4.png';   // https://i.imgur.com/2VbU7t4.png
+// Pipe sprite (transparent PNG)
+let pipeImg = 'https://i.imgur.com/7Kp9S1.png';   // https://i.imgur.com/7Kp9S1.png
+// Background image
+let bgImg   = 'https://i.imgur.com/3W9Gq2.png';   // https://i.imgur.com/3W9Gq2.png
+
+/*  ----------  Game Variables  ---------- */
+let bird, pipes = [], score = 0;
+let gameOver = false;
+
+/*  ----------  Setup  ---------- */
+function preload() {
+  // Load images from the Internet
+  birdImg = loadImage(birdImg);
+  pipeImg = loadImage(pipeImg);
+  bgImg   = loadImage(bgImg);
+}
+
+function setup() {
+  createCanvas(480, 640);
+  bird = new Bird();
+}
+
+/*  ----------  Main Loop  ---------- */
+function draw() {
+  // Draw background
+  if (bgImg) background(bgImg); else background(135, 206, 235);
+  // Update and draw bird
+  bird.update();
+  bird.show();
+
+  // Pipes
+  if (frameCount % 90 === 0 && !gameOver) {
+    pipes.push(new Pipe());
+  }
+
+  // Move & draw pipes
+  for (let i = pipes.length - 1; i >= 0; i--) {
+    const p = pipes[i];
+    p.update();
+    p.show();
+    // Collision check
+    if (p.hits(bird)) {
+      gameOver = true;
+    }
+    // Remove off‑screen pipes
+    if (p.offscreen()) {
+      pipes.splice(i, 1);
+      if (!gameOver) score++;
+    }
+  }
+
+  // Score display
+  fill(255);
+  textSize(32);
+  textAlign(CENTER, TOP);
+  text(`Score: ${score}`, width / 2, 10);
+
+  // Game‑over message
+  if (gameOver) {
+    noLoop();
+    fill(255, 0, 0);
+    textSize(48);
+    text('Game Over', width / 2, height / 2);
+  }
+}
+
+/*  ----------  Bird Class  ---------- */
+class Bird {
+  constructor() {
+    this.x = 80;
+    this.y = height / 2;
+    this.r = 20; // radius for collision detection
+  }
+  update() {
+    if (keyIsDown(32) && !gameOver) { // Space bar
+      this.y -= 6;
+    } else {
+      this.y += 2; // gravity
+    }
+    this.y = constrain(this.y, 0, height);
+  }
+  show() {
+    image(birdImg, this.x - 20, this.y - 20, 40, 40);
+  }
+}
+
+/*  ----------  Pipe Class  ---------- */
+class Pipe {
+  constructor() {
+    this.w = 70;
+    this.gap = 150;
+    this.x = width;
+    this.top = random(50, height - this.gap - 50);
+    this.bottom = this.top + this.gap;
+    this.speed = 4;
+  }
+  update() {
+    this.x -= this.speed;
+  }
+  show() {
+    // Top pipe
+    image(pipeImg, this.x, 0, this.w, this.top);
+    // Bottom pipe
+    image(pipeImg, this.x, this.bottom, this.w, height - this.bottom);
+  }
+  hits(b) {
+    // Bird's bounding box
+    let bx = b.x - b.r;
+    let by = b.y - b.r;
+    let bw = b.r * 2;
+    // Top pipe collision
+    if (bx + bw > this.x && bx < this.x + this.w && by < this.top) return true;
+    // Bottom pipe collision
+    if (bx + bw > this.x && bx < this.x + this.w && by + bw > this.bottom) return true;
+    return false;
+  }
+  offscreen() {
+    return this.x + this.w < 0;
+  }
+}
+</script>
+</body>
+</html>
